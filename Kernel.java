@@ -1643,5 +1643,116 @@ Some internal methods.
     fileSystem.writeIndexNode(indexNode,indexNodeNumber);
     return 1;
   }
+
+
+  public static int link(String path1, String path2) throws Exception {
+    IndexNode indexNode = new IndexNode();
+    short indexNodeNumber1 = findIndexNode(path1, indexNode);
+    short type = (short)( indexNode.getMode() & Kernel.S_IFMT ) ;
+    if( type == Kernel.S_IFDIR ) {
+      System.err.println( PROGRAM_NAME +
+              ": cant create hard link to the directory" ) ;
+      System.exit( EXIT_FAILURE ) ;
+    }
+
+    StringBuffer dirname = new StringBuffer("/");
+    FileSystem fileSystem = openFileSystems[ROOT_FILE_SYSTEM];
+
+    StringTokenizer st = new StringTokenizer(path2, "/");
+    String name = "."; // start at root node
+    while (st.hasMoreTokens()) {
+      name = st.nextToken();
+      if (!name.equals("")) {
+        if (st.hasMoreTokens()) {
+          dirname.append(name);
+          dirname.append('/');
+        }
+      }
+    }
+    short indexNodeNumber2 = findIndexNode(path2,indexNode);
+    if (indexNodeNumber2 < 0) {
+      int dir = open(dirname.toString(), O_RDWR);
+      if (dir < 0) {
+        Kernel.perror(PROGRAM_NAME);
+        System.err.println(PROGRAM_NAME +
+                ": unable to open directory for writing");
+        Kernel.exit(1); // ??? is this correct
+      }
+      int status ;
+      DirectoryEntry newDirectoryEntry =
+              new DirectoryEntry( indexNodeNumber1 , name ) ;
+      DirectoryEntry currentDirectoryEntry = new DirectoryEntry() ;
+      while( true )
+      {
+        // read an entry from the directory
+        status = readdir( dir , currentDirectoryEntry ) ;
+        if( status < 0 )
+        {
+          System.err.println( PROGRAM_NAME +
+                  ": error reading directory in creat" ) ;
+          System.exit( EXIT_FAILURE ) ;
+        }
+        else if( status == 0 )
+        {
+          // if no entry read, write the new item at the current
+          // location and break
+          writedir( dir , newDirectoryEntry ) ;
+          break ;
+        }
+        else
+        {
+          // if current item > new item, write the new item in
+          // place of the old one and break
+          if( currentDirectoryEntry.getName().compareTo(
+                  newDirectoryEntry.getName() ) > 0 ) {
+            int seek_status =
+                    lseek( dir , - DirectoryEntry.DIRECTORY_ENTRY_SIZE , 1 ) ;
+            if( seek_status < 0 )
+            {
+              System.err.println( PROGRAM_NAME +
+                      ": error during seek in creat" ) ;
+              System.exit( EXIT_FAILURE ) ;
+            }
+            writedir( dir , newDirectoryEntry ) ;
+            break ;
+          }
+        }
+      }
+      // copy the rest of the directory entries out to the file
+      while ( status > 0 )
+      {
+        DirectoryEntry nextDirectoryEntry = new DirectoryEntry() ;
+        // read next item
+        status = readdir( dir , nextDirectoryEntry ) ;
+        if( status > 0 )
+        {
+          // in its place
+          int seek_status =
+                  lseek( dir , - DirectoryEntry.DIRECTORY_ENTRY_SIZE , 1 ) ;
+          if( seek_status < 0 )
+          {
+            System.err.println( PROGRAM_NAME +
+                    ": error during seek in creat" ) ;
+            System.exit( EXIT_FAILURE ) ;
+          }
+        }
+        // write current item
+        writedir( dir , currentDirectoryEntry ) ;
+        // current item = next item
+        currentDirectoryEntry = nextDirectoryEntry ;
+      }
+
+      // close the directory
+      close( dir ) ;
+    }
+    else{
+      System.err.println( PROGRAM_NAME +
+              ": file with the same name as hard link already exists" ) ;
+      System.exit( EXIT_FAILURE ) ;
+    }
+    indexNode.setNlink((short)(indexNode.getNlink()+1));
+    fileSystem.writeIndexNode(indexNode,indexNodeNumber1);
+    return 0;
+  }
 }
 
