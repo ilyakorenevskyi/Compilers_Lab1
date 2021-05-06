@@ -191,7 +191,7 @@ public class Kernel
    * <pre>
    *   extern int errno ;
    * </pre>
-   * @see getErrno
+   *
    */
   public static void setErrno( int newErrno )
   {
@@ -211,7 +211,7 @@ public class Kernel
    * <pre>
    *   extern int errno ;
    * </pre>
-   * @see setErrno
+   *
    */
   public static int getErrno()
   {
@@ -1617,9 +1617,8 @@ Some internal methods.
     IndexNode indexNode = new IndexNode();
     short indexNodeNumber = findIndexNode(path,indexNode);
     FileSystem fileSystem = openFileSystems[ ROOT_FILE_SYSTEM ] ;
-    fileSystem.readIndexNode(indexNode, indexNodeNumber);
 
-    if( gid != -1 ){
+    if( gid > -1 ){
       if(process.getUid() == S_ISPUSR || process.getUid() == indexNode.getUid()) {
         short new_gid = (short) gid;
         indexNode.setGid(new_gid);
@@ -1630,7 +1629,7 @@ Some internal methods.
       }
     }
 
-    if( uid != -1){
+    if( uid > -1){
       if(process.getUid() == S_ISPUSR) {
         short new_uid = (short) uid;
         indexNode.setUid(new_uid);
