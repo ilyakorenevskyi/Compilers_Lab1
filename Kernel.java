@@ -467,7 +467,8 @@ public class Kernel
       // return (EACCES) if the file does not exist and the directory
       // in which it is to be created is not writable
 
-      currIndexNode.setMode( mode ) ;
+      int new_mode = mode & (~process.getUmask());
+      currIndexNode.setMode((short) new_mode) ;
       currIndexNode.setUid ( process.getUid() );
       currIndexNode.setGid( process.getGid() );
       currIndexNode.setNlink( (short)1 ) ;
@@ -1752,6 +1753,43 @@ Some internal methods.
     indexNode.setNlink((short)(indexNode.getNlink()+1));
     fileSystem.writeIndexNode(indexNode,indexNodeNumber1);
     return 0;
+  }
+  public static int chmod(String path, int mod) throws Exception {
+    String fullPath = getFullPath(path);
+    IndexNode indexNode = new IndexNode();
+
+    short indexNodeNumber = findIndexNode(fullPath, indexNode);
+    if( indexNodeNumber < 0 ) {
+      process.errno = ENOENT ;
+      return -1 ;
+    }
+
+    if (mod < 0){
+      return -1;
+    }
+    short owner = (short) (mod / 100);
+    short group = (short) ((mod % 100) / 10);
+    short everyone = (short) (mod % 10);
+    if(owner > 7 || group > 7 || everyone > 7)
+      return -1;
+
+    FileSystem fileSystem = openFileSystems[ROOT_FILE_SYSTEM];
+
+    if(process.getUid() == S_ISPUSR || process.getUid() == indexNode.getUid()) {
+      short new_mod = (short) (everyone + group * 8 + owner * 64);
+      indexNode.setMode(new_mod);
+    }
+    else{
+      process.errno = EACCES ;
+      return -1;
+    }
+    fileSystem.writeIndexNode(indexNode, indexNodeNumber);
+    return 1;
+  }
+  public static short umask(short new_umask){
+    short old_umask = process.getUmask();
+    process.setUmask(new_umask);
+    return old_umask;
   }
 }
 
