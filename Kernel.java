@@ -1754,6 +1754,17 @@ Some internal methods.
     fileSystem.writeIndexNode(indexNode,indexNodeNumber1);
     return 0;
   }
+  public static boolean check_num(int mod) {
+    if (mod < 0){
+      return false;
+    }
+    short owner = (short) (mod / 100);
+    short group = (short) ((mod % 100) / 10);
+    short other = (short) (mod % 10);
+    if(owner > 7 || group > 7 || other > 7)
+      return false;
+    return true;
+  }
   public static int chmod(String path, int mod) throws Exception {
     String fullPath = getFullPath(path);
     IndexNode indexNode = new IndexNode();
@@ -1763,21 +1774,16 @@ Some internal methods.
       process.errno = ENOENT ;
       return -1 ;
     }
-
-    if (mod < 0){
+    if(!check_num(mod)) {
+      process.errno = EINVAL;
       return -1;
     }
-    short owner = (short) (mod / 100);
-    short group = (short) ((mod % 100) / 10);
-    short everyone = (short) (mod % 10);
-    if(owner > 7 || group > 7 || everyone > 7)
-      return -1;
 
+    short note = (1 << 9) - 1;
     FileSystem fileSystem = openFileSystems[ROOT_FILE_SYSTEM];
 
     if(process.getUid() == S_ISPUSR || process.getUid() == indexNode.getUid()) {
-      short new_mod = (short) (everyone + group * 8 + owner * 64);
-      indexNode.setMode(new_mod);
+      indexNode.setMode((short) (mod&note));
     }
     else{
       process.errno = EACCES ;
@@ -1787,6 +1793,10 @@ Some internal methods.
     return 1;
   }
   public static short umask(short new_umask){
+    if(!check_num(new_umask)) {
+      process.errno = EINVAL;
+      return -1;
+    }
     short old_umask = process.getUmask();
     short note = (1 << 9) - 1;
     process.setUmask((short) (new_umask&note));
