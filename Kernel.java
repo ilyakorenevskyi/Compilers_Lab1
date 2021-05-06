@@ -1788,7 +1788,8 @@ Some internal methods.
   }
   public static short umask(short new_umask){
     short old_umask = process.getUmask();
-    process.setUmask(new_umask);
+    short note = (1 << 9) - 1;
+    process.setUmask((short) (new_umask&note));
     return old_umask;
   }
 }

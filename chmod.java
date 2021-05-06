@@ -10,7 +10,7 @@ public class chmod {
         short mod = Short.parseShort(args[0]);
         for(int i = 1 ;i < args.length;i++) {
             String name = args[i];
-            int chmod = Kernel.chmod( args[0], mod);
+            int chmod = Kernel.chmod( name, mod);
             if (chmod < 0) {
                 Kernel.perror(PROGRAM_NAME);
                 System.err.println(PROGRAM_NAME + ": unable to change \"" +
