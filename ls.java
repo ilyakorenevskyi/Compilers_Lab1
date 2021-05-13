@@ -21,7 +21,7 @@
  * </pre>
  * @author Ray Ontko
  */
-public class ls
+public class javals
 {
   /**
    * The name of this program.  

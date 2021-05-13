@@ -1783,7 +1783,7 @@ Some internal methods.
     FileSystem fileSystem = openFileSystems[ROOT_FILE_SYSTEM];
 
     if(process.getUid() == S_ISPUSR || process.getUid() == indexNode.getUid()) {
-      indexNode.setMode((short) (mod&note));
+      indexNode.setMode((short) (Integer.parseInt(String.valueOf(mod), 8)&note));
     }
     else{
       process.errno = EACCES ;
@@ -1799,7 +1799,7 @@ Some internal methods.
     }
     short old_umask = process.getUmask();
     short note = (1 << 9) - 1;
-    process.setUmask((short) (new_umask&note));
+    process.setUmask((short) (Integer.parseInt(String.valueOf(new_umask), 8)&note));
     return old_umask;
   }
 }
