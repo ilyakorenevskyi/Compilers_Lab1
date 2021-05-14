@@ -1648,6 +1648,13 @@ Some internal methods.
   public static int link(String path1, String path2) throws Exception {
     IndexNode indexNode = new IndexNode();
     short indexNodeNumber1 = findIndexNode(path1, indexNode);
+
+    if(indexNodeNumber1<0){
+      System.err.println( PROGRAM_NAME +
+              "the file you want to link to does not exist" ) ;
+      System.exit( EXIT_FAILURE ) ;
+    }
+
     short type = (short)( indexNode.getMode() & Kernel.S_IFMT ) ;
     if( type == Kernel.S_IFDIR ) {
       System.err.println( PROGRAM_NAME +
@@ -1710,7 +1717,7 @@ Some internal methods.
             if( seek_status < 0 )
             {
               System.err.println( PROGRAM_NAME +
-                      ": error during seek in creat" ) ;
+                      ": error during seek in link" ) ;
               System.exit( EXIT_FAILURE ) ;
             }
             writedir( dir , newDirectoryEntry ) ;
@@ -1732,7 +1739,7 @@ Some internal methods.
           if( seek_status < 0 )
           {
             System.err.println( PROGRAM_NAME +
-                    ": error during seek in creat" ) ;
+                    ": error during seek in link" ) ;
             System.exit( EXIT_FAILURE ) ;
           }
         }
