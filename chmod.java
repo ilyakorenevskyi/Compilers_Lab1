@@ -4,7 +4,7 @@ public class chmod {
         Kernel.initialize();
         if( args.length < 2 ) {
             System.err.println( PROGRAM_NAME + ": usage: java " + PROGRAM_NAME +
-                    "new-mode path-name" ) ;
+                    " new-mode path-name" ) ;
             Kernel.exit( 1 ) ;
         }
         short mod = Short.parseShort(args[0]);
