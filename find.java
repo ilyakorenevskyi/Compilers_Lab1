@@ -9,18 +9,18 @@ public class find {
         Kernel.initialize();
         for( int i = 0 ; i < args.length ; i ++ ) {
             String name = args[i];
-            recFind(name);
+            recFind(name,name,0);
         }
     }
-    private static void recFind(String path) throws Exception {
+    private static void recFind(String path, String currName, int depth) throws Exception {
         int status;
         Stat stat = new Stat();
         status = Kernel.stat(path, stat);
+
         if (status < 0) {
             return;
         }
-
-        System.out.println(path);
+        System.out.println("|"+"-".repeat(depth*3) + currName);
         short type = (short) (stat.getMode() & Kernel.S_IFMT);
 
         if (type == Kernel.S_IFDIR) {
@@ -50,7 +50,7 @@ public class find {
                 }
 
                 if(!entryName.equals(".") && !entryName.equals("..")) {
-                    recFind(path + "/" + entryName);
+                    recFind(path + "/" + entryName, "/" + entryName, depth+1);
                 }
 
             }

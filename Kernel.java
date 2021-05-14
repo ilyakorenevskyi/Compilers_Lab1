@@ -1615,8 +1615,9 @@ Some internal methods.
 
 
   public static int chown(String path, int uid, int gid) throws Exception {
-    IndexNode indexNode = new IndexNode();
-    short indexNodeNumber = findIndexNode(path,indexNode);
+        String  fullPath = getFullPath(path);
+      IndexNode indexNode = new IndexNode();
+    short indexNodeNumber = findIndexNode(fullPath,indexNode);
     FileSystem fileSystem = openFileSystems[ ROOT_FILE_SYSTEM ] ;
 
     if( gid > -1 ){
@@ -1647,8 +1648,17 @@ Some internal methods.
 
   public static int link(String path1, String path2) throws Exception {
     IndexNode indexNode = new IndexNode();
+
     short indexNodeNumber1 = findIndexNode(path1, indexNode);
-    short type = (short)( indexNode.getMode() & Kernel.S_IFMT ) ;
+
+    if(indexNodeNumber1 < 0){
+      System.err.println( PROGRAM_NAME +
+              ": the file you want to link to does not exist" ) ;
+      System.exit( EXIT_FAILURE );
+    }
+
+    short type = (short)( indexNode.getMode() & Kernel.S_IFMT );
+
     if( type == Kernel.S_IFDIR ) {
       System.err.println( PROGRAM_NAME +
               ": cant create hard link to the directory" ) ;
@@ -1689,7 +1699,7 @@ Some internal methods.
         if( status < 0 )
         {
           System.err.println( PROGRAM_NAME +
-                  ": error reading directory in creat" ) ;
+                  ": error reading directory " ) ;
           System.exit( EXIT_FAILURE ) ;
         }
         else if( status == 0 )
@@ -1710,7 +1720,7 @@ Some internal methods.
             if( seek_status < 0 )
             {
               System.err.println( PROGRAM_NAME +
-                      ": error during seek in creat" ) ;
+                      ": error during seek " ) ;
               System.exit( EXIT_FAILURE ) ;
             }
             writedir( dir , newDirectoryEntry ) ;
@@ -1732,7 +1742,7 @@ Some internal methods.
           if( seek_status < 0 )
           {
             System.err.println( PROGRAM_NAME +
-                    ": error during seek in creat" ) ;
+                    ": error during seek " ) ;
             System.exit( EXIT_FAILURE ) ;
           }
         }
@@ -1758,26 +1768,21 @@ Some internal methods.
     String fullPath = getFullPath(path);
     IndexNode indexNode = new IndexNode();
 
-    short indexNodeNumber = findIndexNode(fullPath, indexNode);
+    short indexNodeNumber = findIndexNode(path, indexNode);
     if( indexNodeNumber < 0 ) {
       process.errno = ENOENT ;
       return -1 ;
     }
-
-    if (mod < 0){
+    if(!check_num(mod)) {
+      process.errno = EINVAL;
       return -1;
     }
-    short owner = (short) (mod / 100);
-    short group = (short) ((mod % 100) / 10);
-    short everyone = (short) (mod % 10);
-    if(owner > 7 || group > 7 || everyone > 7)
-      return -1;
 
+    short note = (1 << 9) - 1;
     FileSystem fileSystem = openFileSystems[ROOT_FILE_SYSTEM];
 
     if(process.getUid() == S_ISPUSR || process.getUid() == indexNode.getUid()) {
-      short new_mod = (short) (everyone + group * 8 + owner * 64);
-      indexNode.setMode(new_mod);
+      indexNode.setMode((short) (mod&note));
     }
     else{
       process.errno = EACCES ;
@@ -1791,6 +1796,17 @@ Some internal methods.
     short note = (1 << 9) - 1;
     process.setUmask((short) (new_umask&note));
     return old_umask;
+  }
+  public static boolean check_num(int mod) {
+    if (mod < 0){
+      return false;
+    }
+    short owner = (short) (mod / 100);
+    short group = (short) ((mod % 100) / 10);
+    short everyone = (short) (mod % 10);
+    if(owner > 7 || group > 7 || everyone > 7)
+      return false;
+    return true;
   }
 }
 
